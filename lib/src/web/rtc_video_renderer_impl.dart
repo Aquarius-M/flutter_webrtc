@@ -104,54 +104,14 @@ class RTCVideoRenderer extends ValueNotifier<RTCVideoValue>
 
   @override
   set srcObject(MediaStream? stream) {
-    if (stream == null) {
-      findHtmlView()?.srcObject = null;
-      _audioElement?.srcObject = null;
-      _srcObject = null;
-      return;
-    }
-
-    _srcObject = stream as MediaStreamWeb;
-
-    if (null != _srcObject) {
-      if (stream.getVideoTracks().isNotEmpty) {
-        _videoStream = html.MediaStream();
-        for (final track in _srcObject!.jsStream.getVideoTracks()) {
-          _videoStream!.addTrack(track);
-        }
-      }
-      if (stream.getAudioTracks().isNotEmpty) {
-        _audioStream = html.MediaStream();
-        for (final track in _srcObject!.jsStream.getAudioTracks()) {
-          _audioStream!.addTrack(track);
-        }
-      }
-    } else {
-      _videoStream = null;
-      _audioStream = null;
-    }
-
-    if (null != _audioStream) {
-      if (null == _audioElement) {
-        _audioElement = html.AudioElement()
-          ..id = _elementIdForAudio
-          ..muted = stream.ownerTag == 'local'
-          ..autoplay = true;
-        _ensureAudioManagerDiv().append(_audioElement!);
-      }
-      _audioElement?.srcObject = _audioStream;
-    }
-
-    var videoElement = findHtmlView();
-    if (null != videoElement) {
-      videoElement.srcObject = _videoStream;
-      _applyDefaultVideoStyles(findHtmlView()!);
-    }
-
-    value = value.copyWith(renderVideo: renderVideo);
+    _updateStreamSource(stream: stream);
   }
 
   Future<void> setSrcObject({MediaStream? stream, String? trackId}) async {
+    _updateStreamSource(stream: stream, trackId: trackId);
+  }
+
+  void _updateStreamSource({MediaStream? stream, String? trackId}) {
     if (stream == null) {
       findHtmlView()?.srcObject = null;
       _audioElement?.srcObject = null;
@@ -161,18 +121,22 @@ class RTCVideoRenderer extends ValueNotifier<RTCVideoValue>
 
     _srcObject = stream as MediaStreamWeb;
 
-    if (null != _srcObject) {
+    if (_srcObject != null) {
       if (stream.getVideoTracks().isNotEmpty) {
         _videoStream = html.MediaStream();
-        for (final track in _srcObject!.jsStream.getVideoTracks()) {
-          if (track.id == trackId) {
+        final videoTracks = jsutil.jsify(_srcObject!.jsStream.getVideoTracks())
+            as List<dynamic>;
+        for (final track in videoTracks) {
+          if (trackId == null || track.id == trackId) {
             _videoStream!.addTrack(track);
           }
         }
       }
       if (stream.getAudioTracks().isNotEmpty) {
         _audioStream = html.MediaStream();
-        for (final track in _srcObject!.jsStream.getAudioTracks()) {
+        final audioTracks = jsutil.jsify(_srcObject!.jsStream.getAudioTracks())
+            as List<dynamic>;
+        for (final track in audioTracks) {
           _audioStream!.addTrack(track);
         }
       }
@@ -181,8 +145,8 @@ class RTCVideoRenderer extends ValueNotifier<RTCVideoValue>
       _audioStream = null;
     }
 
-    if (null != _audioStream) {
-      if (null == _audioElement) {
+    if (_audioStream != null) {
+      if (_audioElement == null) {
         _audioElement = html.AudioElement()
           ..id = _elementIdForAudio
           ..muted = stream.ownerTag == 'local'
@@ -192,10 +156,10 @@ class RTCVideoRenderer extends ValueNotifier<RTCVideoValue>
       _audioElement?.srcObject = _audioStream;
     }
 
-    var videoElement = findHtmlView();
-    if (null != videoElement) {
+    final videoElement = findHtmlView();
+    if (videoElement != null) {
       videoElement.srcObject = _videoStream;
-      _applyDefaultVideoStyles(findHtmlView()!);
+      _applyDefaultVideoStyles(videoElement);
     }
 
     value = value.copyWith(renderVideo: renderVideo);

@@ -1,0 +1,8 @@
+
+# FVM Version Cache
+.fvm/
+.vscode/
+.dart_tool/
+
+pubspec.lock
+.fvmrc

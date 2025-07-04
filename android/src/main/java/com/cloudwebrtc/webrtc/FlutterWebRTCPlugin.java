@@ -22,7 +22,7 @@ import io.flutter.embedding.engine.plugins.lifecycle.HiddenLifecycleReference;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
+// import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.view.TextureRegistry;
 
 /**
@@ -46,32 +46,39 @@ public class FlutterWebRTCPlugin implements FlutterPlugin, ActivityAware, EventC
     /**
      * Plugin registration.
      */
-    public static void registerWith(Registrar registrar) {
-        final FlutterWebRTCPlugin plugin = new FlutterWebRTCPlugin();
+    // public static void registerWith(Registrar registrar) {
+    //     final FlutterWebRTCPlugin plugin = new FlutterWebRTCPlugin();
 
-        plugin.startListening(registrar.context(), registrar.messenger(), registrar.textures());
+    //     plugin.startListening(registrar.context(), registrar.messenger(), registrar.textures());
 
-        if (registrar.activeContext() instanceof Activity) {
-            plugin.methodCallHandler.setActivity((Activity) registrar.activeContext());
-        }
-        application = ((Application) registrar.context().getApplicationContext());
-        application.registerActivityLifecycleCallbacks(plugin.observer);
+    //     if (registrar.activeContext() instanceof Activity) {
+    //         plugin.methodCallHandler.setActivity((Activity) registrar.activeContext());
+    //     }
+    //     application = ((Application) registrar.context().getApplicationContext());
+    //     application.registerActivityLifecycleCallbacks(plugin.observer);
 
-        registrar.addViewDestroyListener(view -> {
-            plugin.stopListening();
-            return false;
-        });
-    }
+    //     registrar.addViewDestroyListener(view -> {
+    //         plugin.stopListening();
+    //         return false;
+    //     });
+    // }
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
-        startListening(binding.getApplicationContext(), binding.getBinaryMessenger(),
-                binding.getTextureRegistry());
+        methodChannel = new MethodChannel(binding.getBinaryMessenger(), "flutter_webrtc");
+        methodCallHandler = new MethodCallHandlerImpl(this);
+        methodChannel.setMethodCallHandler(methodCallHandler);
+        
+        eventChannel = new EventChannel(binding.getBinaryMessenger(), "flutter_webrtc_event");
+        eventChannel.setStreamHandler(this);
     }
 
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-        stopListening();
+        methodChannel.setMethodCallHandler(null);
+        methodChannel = null;
+        eventChannel.setStreamHandler(null);
+        eventChannel = null;
     }
 
     @Override
